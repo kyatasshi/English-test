@@ -1,18 +1,18 @@
 Attribute VB_Name = "main"
 Option Explicit
 
-Const WS_CAPTURE_QUESTIONS As String = "ãƒ†ã‚¹ãƒˆå•é¡Œå–è¾¼"
-Const WS_EXPORT_QUESTIONS As String = "Sheet2"
-Const NUMBER As String = "ç•ªå·"
-Const TOKEN As String = "å˜èª"
-Const TRANSLATION As String = "è¨³"
-Const RANDOM As String = "ä¹±æ•°"
+Const WS_CAPTURE_QUESTIONS As String = "ƒeƒXƒg–â‘èæ"
+Const WS_TEMPORARY As String = "ì‹ÆƒV[ƒg"
+Const NUMBER As String = "”Ô†"
+Const TOKEN As String = "’PŒê"
+Const TRANSLATION As String = "–ó"
+Const RANDOM As String = "—”"
 
 Sub CleanCells()
     
     Sheets(WS_CAPTURE_QUESTIONS).Range("A:D").clear
     
-    msgbox "ãƒ†ã‚¹ãƒˆå•é¡Œã‚’å‰Šé™¤ã—ã¾ã—ãŸ"
+    msgbox "ƒeƒXƒg–â‘è‚ğíœ‚µ‚Ü‚µ‚½"
     
 End Sub
 
@@ -37,11 +37,11 @@ Sub ImportExaminationQuestions()
         .Delete
     End With
     
-    msgbox "ãƒ†ã‚¹ãƒˆå•é¡Œã‚’å–ã‚Šè¾¼ã¿ã¾ã—ãŸ"
+    msgbox "ƒeƒXƒg–â‘è‘S‘Ì‚ğæ‚è‚İ‚Ü‚µ‚½"
 
 End Sub
 
-Sub ExtractQuestions()
+Sub SelectQuestionsToUse()
 
     Sheets(WS_CAPTURE_QUESTIONS).Select
     
@@ -54,17 +54,17 @@ Sub ExtractQuestions()
     endRow = Cells(Rows.Count, "A").End(xlUp).Row
     
     If IsNull(beginNum) Or IsNull(endNum) Then
-        msg = "å–å¾—ã—ãŸã„å•é¡Œã®ç•ªå·ã‚’å…¥åŠ›ã—ã¦ãã ã•ã„ã€‚"
+        msg = "æ“¾‚µ‚½‚¢–â‘è‚Ì”Ô†‚ğ“ü—Í‚µ‚Ä‚­‚¾‚³‚¢B"
     ElseIf IsNumeric(beginNum) = False Or IsNumeric(endNum) = False Then
-        msg = "æ•°å€¤ã‚’å…¥åŠ›ã—ã¦ãã ã•ã„ã€‚"
+        msg = "”’l‚ğ“ü—Í‚µ‚Ä‚­‚¾‚³‚¢B"
     ElseIf beginNum = 0 Or endNum = 0 Then
-        msg = "1ä»¥ä¸Šã®æ•´æ•°ã‚’å…¥åŠ›ã—ã¦ãã ã•ã„ã€‚"
+        msg = "1ˆÈã‚Ì®”‚ğ“ü—Í‚µ‚Ä‚­‚¾‚³‚¢B"
     ElseIf endNum > endRow Then
-        msg = "å•é¡Œã¯" & endRow - 1 & "å•ã¾ã§ã—ã‹ã‚ã‚Šã¾ã›ã‚“ã€‚"
+        msg = "–â‘è‚Í" & endRow - 1 & "–â‚Ü‚Å‚µ‚©‚ ‚è‚Ü‚¹‚ñB"
     Else
         Dim i As Integer, j As Integer
-        
-        'å¯¾è±¡è¨­å•ç¾¤ã«ä¹±æ•°ã‚’è¨­å®š
+                        
+        '‘ÎÛİ–âŒQ‚É—”‚ğİ’è
         Randomize
         For i = beginNum To endNum
             Range(Cells(i + 1, "D"), Cells(i + 1, "D")) = Rnd()
@@ -79,32 +79,35 @@ Sub ExtractQuestions()
             .Add Range(Cells(beginNum + 1, "D"), Cells(endNum + 1, "D")), RANDOM
         End With
         
-        Sheets(WS_EXPORT_QUESTIONS).Select
+        Sheets(WS_TEMPORARY).Select
         
         Dim columns As Variant
         columns = Array(NUMBER, TOKEN, TRANSLATION, RANDOM)
         
+        Dim questionNum As Long
+        questionNum = (endNum - beginNum) + 1
+
         For i = LBound(columns) To UBound(columns)
-            For j = 1 To (endNum - beginNum) + 1
+            For j = 1 To questionNum
                 Cells(j, i + 1) = targetCollection.Item(columns(i))(j)
             Next j
         Next i
         
-        msg = "ä½¿ç”¨ã™ã‚‹å•é¡Œã‚’ä½œæˆã—ã¾ã—ãŸã€‚"
+        Range(Cells(1, "A"), Cells(questionNum, "D")).Sort _
+            Key1:=Range("D1"), _
+            order1:=xlAscending, _
+            Header:=xlNo, _
+            ordercustom:=1, _
+            MatchCase:=False, _
+            Orientation:=xlTopToBottom, _
+            SortMethod:=xlPinYin
+            
+        Range("D1:D" & CStr(questionNum)).clear
+        Sheets(WS_CAPTURE_QUESTIONS).Range("D1:D" & CStr(endRow)).clear
         
-        'Dim targetRange As Range
-        'Dim targetData As Variant
-        'Set targetRange = Range(Cells(beginNum + 1, "A"), Cells(endNum + 1, "C"))
-        'targetData = targetRange
-        
-        'For i = LBound(targetData, 1) To UBound(targetData, 1)
-        '    For j = LBound(targetData, 2) To UBound(targetData, 2)
-        '        Cells(i, j) = targetData(i, j)
-        '    Next j
-        'Next i
+        msg = "g—p‚·‚é–â‘è‚Ì”ÍˆÍ‚ğ’Šo‚µ‚Ü‚µ‚½B"
     End If
     
     msgbox msg
 
 End Sub
-

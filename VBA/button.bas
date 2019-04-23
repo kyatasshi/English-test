@@ -1,14 +1,14 @@
-Attribute VB_Name = "Module2"
+Attribute VB_Name = "button"
 Option Explicit
 
 Sub テスト問題取込()
 
-    Module1.import_examination_questions
+    main.ImportExaminationQuestions
 
 End Sub
 
 Sub テスト問題削除()
 
-    Module1.clean_cells
+    main.CleanCells
     
 End Sub
