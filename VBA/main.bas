@@ -3,6 +3,8 @@ Option Explicit
 
 Const WS_CAPTURE_QUESTIONS As String = "テスト問題取込"
 Const WS_TEMPORARY As String = "作業シート"
+Const WS_QUESTION_AND_ANSWER As String = "解答"
+Const WS_QUESTION As String = "問題"
 Const NUMBER As String = "番号"
 Const TOKEN As String = "単語"
 Const TRANSLATION As String = "訳"
@@ -11,8 +13,6 @@ Const RANDOM As String = "乱数"
 Sub CleanCells()
     
     Sheets(WS_CAPTURE_QUESTIONS).Range("A:D").clear
-    
-    msgbox "テスト問題を削除しました"
     
 End Sub
 
@@ -26,7 +26,7 @@ Sub ImportExaminationQuestions()
     
     Dim queryTable As queryTable
     Set queryTable = wsImport.QueryTables.Add(Connection:="TEXT;" & filePath, _
-                                                Destination:=wsImport.Range("A1"))
+                                              Destination:=wsImport.Range("A1"))
                                           
     With queryTable
         .TextFilePlatform = 932
@@ -84,16 +84,16 @@ Sub SelectQuestionsToUse()
         Dim columns As Variant
         columns = Array(NUMBER, TOKEN, TRANSLATION, RANDOM)
         
-        Dim questionNum As Long
-        questionNum = (endNum - beginNum) + 1
+        Dim questionRange As Long
+        questionRange = (endNum - beginNum) + 1
 
         For i = LBound(columns) To UBound(columns)
-            For j = 1 To questionNum
+            For j = 1 To questionRange
                 Cells(j, i + 1) = targetCollection.Item(columns(i))(j)
             Next j
         Next i
         
-        Range(Cells(1, "A"), Cells(questionNum, "D")).Sort _
+        Range(Cells(1, "A"), Cells(questionRange, "D")).Sort _
             Key1:=Range("D1"), _
             order1:=xlAscending, _
             Header:=xlNo, _
@@ -102,7 +102,7 @@ Sub SelectQuestionsToUse()
             Orientation:=xlTopToBottom, _
             SortMethod:=xlPinYin
             
-        Range("D1:D" & CStr(questionNum)).clear
+        Range("D1:D" & CStr(questionRange)).clear
         Sheets(WS_CAPTURE_QUESTIONS).Range("D1:D" & CStr(endRow)).clear
         
         msg = "使用する問題の範囲を抽出しました。"
@@ -111,3 +111,88 @@ Sub SelectQuestionsToUse()
     msgbox msg
 
 End Sub
+
+Sub ExtractExamQuestion()
+
+    Sheets(WS_TEMPORARY).Select
+
+    Dim questionNum As Long
+    ' 入力された値を取得するが、とりあえず100だけを想定
+    questionNum = Sheets(WS_CAPTURE_QUESTIONS).Cells(9, "E")
+    
+    Dim examQuestion As Variant
+    ReDim examQuestion(1 To questionNum, 1 To 3)
+    
+    Dim i As Integer, j As Integer
+    For i = LBound(examQuestion, 1) To UBound(examQuestion, 1)
+        For j = LBound(examQuestion, 2) To UBound(examQuestion, 2)
+            examQuestion(i, j) = Cells(i, j)
+        Next j
+    Next i
+    
+    ActiveSheet.Cells.clear
+    
+    ' 50問ずつに分ける
+    'Dim questionCollection As New Collection
+    Dim halfQuestionNum As Long
+    halfQuestionNum = questionNum / 2
+    
+    For i = LBound(examQuestion, 1) To halfQuestionNum
+        For j = LBound(examQuestion, 2) To UBound(examQuestion, 2)
+            Cells(i, j) = examQuestion(i, j)
+        Next j
+    Next i
+    
+    For i = halfQuestionNum + 1 To UBound(examQuestion, 1)
+        For j = LBound(examQuestion, 2) To UBound(examQuestion, 2)
+            Cells(i - 50, j + 3) = examQuestion(i, j)
+        Next j
+    Next i
+    
+'    ActiveSheet.Cells.clear
+'    ActiveSheet.Cells(i, j) = examQuestion(i, j)
+
+'    For i = 1 To questionNum
+'        For j = LBound(columns) To UBound(columns)
+'            'examQuestion(i, j) = Cells(i, j)
+'            Sheets("Sheet2").Cells(i, j + 1) = ActiveSheet.Cells(i, j + 1)
+'        Next j
+'    Next i
+
+End Sub
+
+Sub CreateExamQuestion()
+    
+    Sheets(WS_QUESTION_AND_ANSWERS).Select
+    
+    Cells(1, 1).EntireRow.Insert
+    
+    Dim columns As Variant
+    columns = Array(NUMBER, TOKEN, TRANSLATION)
+    
+    Dim i As Integer, j As Integer
+    For i = LBound(columns) To UBound(columns)
+        Cells(1, i + 1) = columns(i)
+        Cells(1, i + 4) = columns(i)
+    Next i
+    
+    Sheets(WS_TEMPORARY).Range("A1:F50").Copy
+    Range("A2").PasteSpecial Paste:=xlPasteValues, operation:=xlNone
+    Application.CutCopyMode = False
+    
+End Sub
+
+' 100問より多くても対応するか処理は後回し
+'Function hoge(ByRef examQuestions As Variant, ByVal questionNumber As Long) As Collection
+'
+'Dim resultCollection As New Collection
+'Dim tmpArray As Variant
+'
+'' questionNumber / 2 が50で割り切れた場合の処理
+'' questionNumber / 2 が50で割り切れた場合の処理
+'
+'
+'End Function
+
+
+
