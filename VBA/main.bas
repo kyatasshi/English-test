@@ -36,8 +36,6 @@ Sub ImportExaminationQuestions()
         .Refresh
         .Delete
     End With
-    
-    msgbox "テスト問題全体を取り込みました"
 
 End Sub
 
@@ -46,22 +44,13 @@ Sub SelectQuestionsToUse()
     Sheets(WS_CAPTURE_QUESTIONS).Select
     
     Dim beginNum As Integer, endNum As Integer
-    Dim endRow As Integer
-    Dim msg As String
+    Dim maxRow As Integer
     
     beginNum = Cells(8, "E")
     endNum = Cells(8, "F")
-    endRow = Cells(Rows.Count, "A").End(xlUp).Row
+    maxRow = Cells(Rows.Count, "A").End(xlUp).Row
     
-    If IsNull(beginNum) Or IsNull(endNum) Then
-        msg = "取得したい問題の番号を入力してください。"
-    ElseIf IsNumeric(beginNum) = False Or IsNumeric(endNum) = False Then
-        msg = "数値を入力してください。"
-    ElseIf beginNum = 0 Or endNum = 0 Then
-        msg = "1以上の整数を入力してください。"
-    ElseIf endNum > endRow Then
-        msg = "問題は" & endRow - 1 & "問までしかありません。"
-    Else
+    If CheckValue(beginNum, endNum, maxRow) Then
         Dim i As Integer, j As Integer
                         
         '対象設問群に乱数を設定
@@ -80,16 +69,17 @@ Sub SelectQuestionsToUse()
         End With
         
         Sheets(WS_TEMPORARY).Select
+        ActiveSheet.Cells.clear
         
-        Dim columns As Variant
-        columns = Array(NUMBER, TOKEN, TRANSLATION, RANDOM)
+        Dim questionColumns As Variant
+        questionColumns = Array(NUMBER, TOKEN, TRANSLATION, RANDOM)
         
         Dim questionRange As Long
         questionRange = (endNum - beginNum) + 1
 
-        For i = LBound(columns) To UBound(columns)
+        For i = LBound(questionColumns) To UBound(questionColumns)
             For j = 1 To questionRange
-                Cells(j, i + 1) = targetCollection.Item(columns(i))(j)
+                Cells(j, i + 1) = targetCollection.Item(questionColumns(i))(j)
             Next j
         Next i
         
@@ -103,12 +93,10 @@ Sub SelectQuestionsToUse()
             SortMethod:=xlPinYin
             
         Range("D1:D" & CStr(questionRange)).clear
-        Sheets(WS_CAPTURE_QUESTIONS).Range("D1:D" & CStr(endRow)).clear
-        
-        msg = "使用する問題の範囲を抽出しました。"
+        Sheets(WS_CAPTURE_QUESTIONS).Range("D1:D" & CStr(maxRow)).clear
+    Else
+        End
     End If
-    
-    msgbox msg
 
 End Sub
 
@@ -148,39 +136,85 @@ Sub ExtractExamQuestion()
             Cells(i - 50, j + 3) = examQuestion(i, j)
         Next j
     Next i
-    
-'    ActiveSheet.Cells.clear
-'    ActiveSheet.Cells(i, j) = examQuestion(i, j)
-
-'    For i = 1 To questionNum
-'        For j = LBound(columns) To UBound(columns)
-'            'examQuestion(i, j) = Cells(i, j)
-'            Sheets("Sheet2").Cells(i, j + 1) = ActiveSheet.Cells(i, j + 1)
-'        Next j
-'    Next i
 
 End Sub
 
-Sub CreateExamQuestion()
+Sub CreateQuestionAndAnswer()
     
-    Sheets(WS_QUESTION_AND_ANSWERS).Select
+    Sheets(WS_QUESTION_AND_ANSWER).Select
+    ActiveSheet.Cells.clear
+    
+    Sheets(WS_TEMPORARY).Cells.Copy
+    Range("A1").PasteSpecial Paste:=xlPasteValues, operation:=xlNone
+    Application.CutCopyMode = False
     
     Cells(1, 1).EntireRow.Insert
     
-    Dim columns As Variant
-    columns = Array(NUMBER, TOKEN, TRANSLATION)
+    Dim questionColumns As Variant
+    questionColumns = Array(NUMBER, TOKEN, TRANSLATION)
     
     Dim i As Integer, j As Integer
-    For i = LBound(columns) To UBound(columns)
-        Cells(1, i + 1) = columns(i)
-        Cells(1, i + 4) = columns(i)
+    For i = LBound(questionColumns) To UBound(questionColumns)
+        Cells(1, i + 1) = questionColumns(i)
+        Cells(1, i + 4) = questionColumns(i)
     Next i
     
-    Sheets(WS_TEMPORARY).Range("A1:F50").Copy
-    Range("A2").PasteSpecial Paste:=xlPasteValues, operation:=xlNone
-    Application.CutCopyMode = False
+    '以下シート整形
+    Dim maxRow As Long, maxCol As Long
+    maxRow = Cells(Rows.Count, 1).End(xlUp).Row
+    maxCol = Cells(1, columns.Count).End(xlToLeft).column
+    
+    Range(Cells(1, 1), Cells(maxRow, maxCol)).Borders.LineStyle = xlContinuous
+    '現時点ではAutoFitを使用しているが、列幅は固定値に変更予定
+    Range(Cells(1, 1), Cells(maxRow, maxCol)).EntireColumn.AutoFit
+    
+    Cells(1, 1).EntireRow.Insert
+    Cells(1, 1).EntireColumn.Insert
     
 End Sub
+
+Sub CreateExamQuestion()
+
+    Sheets(WS_QUESTION_AND_ANSWER).Select
+    Sheets(WS_QUESTION).Cells.clear
+
+    Cells.Copy
+    Sheets(WS_QUESTION).Range("A1").PasteSpecial Paste:=xlPasteAll, operation:=xlNone
+    Application.CutCopyMode = False
+
+    Sheets(WS_QUESTION).Select
+
+    Dim maxRow As Long
+    maxRow = Cells(Rows.Count, "B").End(xlUp).Row
+
+    '訳部分を削除
+    Union(Range(Cells(3, "D"), Cells(maxRow, "D")), Range(Cells(3, "G"), Cells(maxRow, "G"))).ClearContents
+
+End Sub
+
+Function CheckValue(ByVal beginNum As Long, ByVal endNum As Long, ByVal maxRow As Long) As Boolean
+
+    Dim msg As String
+    msg = ""
+
+    If IsNull(beginNum) Or IsNull(endNum) Then
+        msg = "取得したい問題の番号を入力してください。"
+    ElseIf IsNumeric(beginNum) = False Or IsNumeric(endNum) = False Then
+        msg = "数値を入力してください。"
+    ElseIf beginNum = 0 Or endNum = 0 Then
+        msg = "1以上の整数を入力してください。"
+    ElseIf endNum > maxRow Then
+        msg = "問題は" & maxRow - 1 & "問までしかありません。"
+    End If
+    
+    If msg = "" Then
+        CheckValue = True
+    Else
+        msgbox msg
+        CheckValue = False
+    End If
+
+End Function
 
 ' 100問より多くても対応するか処理は後回し
 'Function hoge(ByRef examQuestions As Variant, ByVal questionNumber As Long) As Collection

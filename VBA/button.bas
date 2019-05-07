@@ -3,12 +3,20 @@ Option Explicit
 
 Sub テスト問題取込()
 
+    main.CleanCells
+    
     main.ImportExaminationQuestions
 
 End Sub
 
-Sub テスト問題削除()
+Sub テスト問題作成()
 
-    main.CleanCells
+    main.SelectQuestionsToUse
+    
+    main.ExtractExamQuestion
+    
+    main.CreateQuestionAndAnswer
+    
+    main.CreateExamQuestion
     
 End Sub
