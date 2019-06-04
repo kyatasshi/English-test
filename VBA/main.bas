@@ -46,8 +46,8 @@ Sub SelectQuestionsToUse()
     Dim beginNum As Integer, endNum As Integer
     Dim maxRow As Integer
     
-    beginNum = Cells(8, "E")
-    endNum = Cells(8, "F")
+    beginNum = Cells(8, "F")
+    endNum = Cells(8, "G")
     maxRow = Cells(Rows.Count, "A").End(xlUp).Row
     
     If CheckValue(beginNum, endNum, maxRow) Then
@@ -106,7 +106,7 @@ Sub ExtractExamQuestion()
 
     Dim questionNum As Long
     ' 入力された値を取得するが、とりあえず100だけを想定
-    questionNum = Sheets(WS_CAPTURE_QUESTIONS).Cells(9, "E")
+    questionNum = Sheets(WS_CAPTURE_QUESTIONS).Cells(9, "F")
     
     Dim examQuestion As Variant
     ReDim examQuestion(1 To questionNum, 1 To 3)
@@ -162,7 +162,7 @@ Sub CreateQuestionAndAnswer()
     '以下シート整形
     Dim maxRow As Long, maxCol As Long
     maxRow = Cells(Rows.Count, 1).End(xlUp).Row
-    maxCol = Cells(1, columns.Count).End(xlToLeft).column
+    maxCol = Cells(1, Columns.Count).End(xlToLeft).column
     
     Range(Cells(1, 1), Cells(maxRow, maxCol)).Borders.LineStyle = xlContinuous
     '現時点ではAutoFitを使用しているが、列幅は固定値に変更予定
@@ -170,6 +170,11 @@ Sub CreateQuestionAndAnswer()
     
     Cells(1, 1).EntireRow.Insert
     Cells(1, 1).EntireColumn.Insert
+    
+    Columns("D").ColumnWidth = 40
+    Columns("G").ColumnWidth = 40
+    
+    Sheets(WS_TEMPORARY).Cells.clear
     
 End Sub
 
